@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: ${DB_HOST}
+    image: ${DB_IMAGE}:${DB_TAG}
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWD}
+      - POSTGRES_USER=${DB_USER}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - pg-db-data:/var/lib/postgresql/data/pgdata      
+    restart: on-failure:3
+
+  redis:
+    image: redis:latest
+    command: redis-server
+    volumes:
+      - redis:/var/lib/redis
+      - redis-config:/usr/local/etc/redis/redis.conf
+    ports:
+      - 6379:6379
+    networks:
+      - redis-network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=${RD_USER}
+      - HTTP_PASSWORD=${RD_PASSWD}
+    ports:
+      - 8081:8081
+    networks:
+      - redis-network
+    depends_on:
+      - redis
+
+volumes:
+  redis:
+  redis-config:
+  pg-db-data:
+
+networks:
+  redis-network:
+    driver: bridge
